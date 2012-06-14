@@ -18,14 +18,10 @@ Located in zen/templates:
   maintenance-page.tpl.php
   node.tpl.php
   region.tpl.php
-  region--footer.tpl.php
   region--sidebar.tpl.php
-  region--no-wrapper.tpl.php
   block.tpl.php
-  block--no-wrapper.tpl.php
   comment-wrapper.tpl.php
   comment.tpl.php
-  user-picture.tpl.php
 
 Located in /modules/aggregator:
   aggregator-feed-source.tpl.php
@@ -82,7 +78,7 @@ Located in /modules/search:
   search-results.tpl.php
 
 Located in /modules/system:
-  html.tpl.php  (overridden by Zen)
+  html.tpl.php (overridden by Zen)
   maintenance-page.tpl.php  (overridden by Zen)
   page.tpl.php  (overridden by Zen)
   region.tpl.php  (overridden by Zen)
@@ -94,7 +90,7 @@ Located in /modules/toolbar:
   toolbar.tpl.php
 
 Located in /modules/user:
-  user-picture.tpl.php  (overridden by Zen)
+  user-picture.tpl.php
   user-profile-category.tpl.php
   user-profile-item.tpl.php
   user-profile.tpl.php

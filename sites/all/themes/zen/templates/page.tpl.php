@@ -9,7 +9,7 @@
  * - $base_path: The base URL path of the Drupal installation. At the very
  *   least, this will always default to /.
  * - $directory: The directory the template is located in, e.g. modules/system
- *   or themes/bartik.
+ *   or themes/garland.
  * - $is_front: TRUE if the current page is the front page.
  * - $logged_in: TRUE if the user is registered and signed in.
  * - $is_admin: TRUE if the user has permission to access administration pages.
@@ -53,13 +53,12 @@
  *   comment/reply/12345).
  *
  * Regions:
- * - $page['header']: Items for the header region.
- * - $page['navigation']: Items for the navigation region, below the main menu (if any).
  * - $page['help']: Dynamic help text, mostly for admin pages.
  * - $page['highlighted']: Items for the highlighted content region.
  * - $page['content']: The main content of the current page.
  * - $page['sidebar_first']: Items for the first sidebar.
  * - $page['sidebar_second']: Items for the second sidebar.
+ * - $page['header']: Items for the header region.
  * - $page['footer']: Items for the footer region.
  * - $page['bottom']: Items to appear at the bottom of the page below the footer.
  *
@@ -70,51 +69,54 @@
  */
 ?>
 
-<div id="page">
+<div id="page-wrapper"><div id="page">
 
-  <header id="header" role="banner">
+  <div id="header"><div class="section clearfix">
 
     <?php if ($logo): ?>
       <a href="<?php print $front_page; ?>" title="<?php print t('Home'); ?>" rel="home" id="logo"><img src="<?php print $logo; ?>" alt="<?php print t('Home'); ?>" /></a>
     <?php endif; ?>
 
     <?php if ($site_name || $site_slogan): ?>
-      <hgroup id="name-and-slogan">
+      <div id="name-and-slogan">
         <?php if ($site_name): ?>
-          <h1 id="site-name">
-            <a href="<?php print $front_page; ?>" title="<?php print t('Home'); ?>" rel="home"><span><?php print $site_name; ?></span></a>
-          </h1>
+          <?php if ($title): ?>
+            <div id="site-name"><strong>
+              <a href="<?php print $front_page; ?>" title="<?php print t('Home'); ?>" rel="home"><span><?php print $site_name; ?></span></a>
+            </strong></div>
+          <?php else: /* Use h1 when the content title is empty */ ?>
+            <h1 id="site-name">
+              <a href="<?php print $front_page; ?>" title="<?php print t('Home'); ?>" rel="home"><span><?php print $site_name; ?></span></a>
+            </h1>
+          <?php endif; ?>
         <?php endif; ?>
 
         <?php if ($site_slogan): ?>
-          <h2 id="site-slogan"><?php print $site_slogan; ?></h2>
+          <div id="site-slogan"><?php print $site_slogan; ?></div>
         <?php endif; ?>
-      </hgroup><!-- /#name-and-slogan -->
+      </div><!-- /#name-and-slogan -->
     <?php endif; ?>
 
-    <?php if ($secondary_menu): ?>
-      <nav id="secondary-menu" role="navigation">
-        <?php print theme('links__system_secondary_menu', array(
-          'links' => $secondary_menu,
-          'attributes' => array(
-            'class' => array('links', 'inline', 'clearfix'),
-          ),
-          'heading' => array(
-            'text' => $secondary_menu_heading,
-            'level' => 'h2',
-            'class' => array('element-invisible'),
-          ),
-        )); ?>
-      </nav>
-    <?php endif; ?>
+    <?php print theme('links__system_secondary_menu', array(
+      'links' => $secondary_menu,
+      'attributes' => array(
+        'id' => 'secondary-menu',
+        'class' => array('links', 'inline', 'clearfix'),
+      ),
+      'heading' => array(
+        'text' => $secondary_menu_heading,
+        'level' => 'h2',
+        'class' => array('element-invisible'),
+      ),
+    )); ?>
 
     <?php print render($page['header']); ?>
 
-  </header>
+  </div></div><!-- /.section, /#header -->
 
-  <div id="main">
+  <div id="main-wrapper"><div id="main" class="clearfix<?php if ($main_menu || $page['navigation']) { print ' with-navigation'; } ?>">
 
-    <div id="content" class="column" role="main">
+    <div id="content" class="column"><div class="section">
       <?php print render($page['highlighted']); ?>
       <?php print $breadcrumb; ?>
       <a id="main-content"></a>
@@ -124,59 +126,46 @@
       <?php endif; ?>
       <?php print render($title_suffix); ?>
       <?php print $messages; ?>
-      <?php print render($tabs); ?>
+      <?php if ($tabs = render($tabs)): ?>
+        <div class="tabs"><?php print $tabs; ?></div>
+      <?php endif; ?>
       <?php print render($page['help']); ?>
       <?php if ($action_links): ?>
         <ul class="action-links"><?php print render($action_links); ?></ul>
       <?php endif; ?>
       <?php print render($page['content']); ?>
       <?php print $feed_icons; ?>
-    </div><!-- /#content -->
+    </div></div><!-- /.section, /#content -->
 
-    <div id="navigation">
+    <?php if ($page['navigation'] || $main_menu): ?>
+      <div id="navigation"><div class="section clearfix">
 
-      <?php if ($main_menu): ?>
-        <nav id="main-menu" role="navigation">
-          <?php
-          // This code snippet is hard to modify. We recommend turning off the
-          // "Main menu" on your sub-theme's settings form, deleting this PHP
-          // code block, and, instead, using the "Menu block" module.
-          // @see http://drupal.org/project/menu_block
-          print theme('links__system_main_menu', array(
-            'links' => $main_menu,
-            'attributes' => array(
-              'class' => array('links', 'inline', 'clearfix'),
-            ),
-            'heading' => array(
-              'text' => t('Main menu'),
-              'level' => 'h2',
-              'class' => array('element-invisible'),
-            ),
-          )); ?>
-        </nav>
-      <?php endif; ?>
+        <?php print theme('links__system_main_menu', array(
+          'links' => $main_menu,
+          'attributes' => array(
+            'id' => 'main-menu',
+            'class' => array('links', 'inline', 'clearfix'),
+          ),
+          'heading' => array(
+            'text' => t('Main menu'),
+            'level' => 'h2',
+            'class' => array('element-invisible'),
+          ),
+        )); ?>
 
-      <?php print render($page['navigation']); ?>
+        <?php print render($page['navigation']); ?>
 
-    </div><!-- /#navigation -->
-
-    <?php
-      // Render the sidebars to see if there's anything in them.
-      $sidebar_first  = render($page['sidebar_first']);
-      $sidebar_second = render($page['sidebar_second']);
-    ?>
-
-    <?php if ($sidebar_first || $sidebar_second): ?>
-      <aside class="sidebars">
-        <?php print $sidebar_first; ?>
-        <?php print $sidebar_second; ?>
-      </aside><!-- /.sidebars -->
+      </div></div><!-- /.section, /#navigation -->
     <?php endif; ?>
 
-  </div><!-- /#main -->
+    <?php print render($page['sidebar_first']); ?>
+
+    <?php print render($page['sidebar_second']); ?>
+
+  </div></div><!-- /#main, /#main-wrapper -->
 
   <?php print render($page['footer']); ?>
 
-</div><!-- /#page -->
+</div></div><!-- /#page, /#page-wrapper -->
 
 <?php print render($page['bottom']); ?>

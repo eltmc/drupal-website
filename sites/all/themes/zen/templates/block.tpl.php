@@ -55,6 +55,8 @@
   <?php endif; ?>
   <?php print render($title_suffix); ?>
 
-  <?php print $content; ?>
+  <div class="content"<?php print $content_attributes; ?>>
+    <?php print $content; ?>
+  </div>
 
 </div><!-- /.block -->

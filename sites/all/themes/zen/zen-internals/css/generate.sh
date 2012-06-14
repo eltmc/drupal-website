@@ -5,11 +5,7 @@
 
 rm *.css;
 for FILENAME in ../../STARTERKIT/css/*.css; do
-  cp $FILENAME .;
-done
-rm layouts/*.css;
-for FILENAME in ../../STARTERKIT/css/layouts/*.css; do
-  cp $FILENAME layouts;
+  cp ../../STARTERKIT/css/$FILENAME .;
 done
 
 # Don't need the core reference.
@@ -17,5 +13,5 @@ rm drupal7-reference.css;
 
 rm ../images/*;
 for FILENAME in ../../STARTERKIT/images/*; do
-  cp $FILENAME ../images/;
+  cp ../../STARTERKIT/css/$FILENAME ../images/;
 done

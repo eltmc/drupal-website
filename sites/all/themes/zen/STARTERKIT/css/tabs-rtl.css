@@ -4,11 +4,19 @@
  */
 
 
-ul.primary li,
-ul.secondary li {
-  float: right;
+ul.primary {
+  padding: 0 10px 0 0;
 }
 
 ul.primary li {
-  margin: 0.5em 3px 0 0;
+  float: right;
+}
+
+ul.secondary {
+  padding: 0 5px 0 0;
+}
+
+ul.secondary li {
+  float: right;
+  border-left: none;
 }
