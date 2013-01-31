@@ -223,3 +223,10 @@ class NodeExportXmlDecoder {
   }
 
 }
+
+/**
+ * Callback for actions.
+ */
+function node_export_xml_action_form($context, &$form_state) {
+  return node_export_action_form($context, $form_state, 'xml');
+}

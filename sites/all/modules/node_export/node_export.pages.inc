@@ -8,73 +8,6 @@
  */
 
 /**
- * Implements hook_tokens().
- */
-function node_export_tokens($type, $tokens, $data = array(), $options = array()) {
-  $replacements = array();
-  if ($type == 'node_export_filename' && !empty($data['node_export_filename'])) {
-    $object = (array)$data['node_export_filename'];
-
-    foreach ($tokens as $name => $original) {
-      switch ($name) {
-        // Simple key values on the node.
-        case 'nid-list':
-          $replacements[$original] = $object['nid-list'];
-          break;
-
-        case 'node-count':
-          $replacements[$original] = $object['node-count'];
-          break;
-
-        case 'timestamp':
-          $replacements[$original] = $object['timestamp'];
-          break;
-
-        case 'format':
-          $replacements[$original] = $object['format'];
-          break;
-      }
-    }
-  }
-  return $replacements;
-}
-
-/**
- * Implements hook_token_info().
- */
-function node_export_token_info() {
-  return array(
-    'types' => array(
-      'node_export_filename' => array(
-        'name' => t('Node export filename'),
-        'description' => t('Tokens related to the Node export filename.'),
-        'needs-data' => 'node_export_filename',
-      ),
-    ),
-    'tokens' => array(
-      'node_export_filename' => array(
-        'nid-list' => array(
-          'name' => t("Node ID list"),
-          'description' => t("Comma seperated list of Node IDs in square brackets (if available)."),
-        ),
-        'node-count' => array(
-          'name' => t("Node count"),
-          'description' => t("The number of nodes exported."),
-        ),
-        'timestamp' => array(
-          'name' => t("Timestamp"),
-          'description' => t("The timestamp when the file was generated."),
-        ),
-        'format' => array(
-          'name' => t("Format"),
-          'description' => t("The format used to export."),
-        ),
-      ),
-    ),
-  );
-}
-
-/**
  * Handles the bits of the form that are specific to the token module.
  */
 function node_export_settings_token_bits(&$form, $key) {
@@ -142,7 +75,7 @@ function node_export_settings($form, &$form_state) {
       '#title' => t('Format to use when exporting a node'),
       '#default_value' => $selected_formats,
       '#options' => $format_options,
-      '#description' => t("If you select multiple formats, they will all be available to the user.  If you select none, or the format handler is not found, it will use the default 'Node code'.  This does not affect imports, the required import format will be used automatically."),
+      '#description' => t("If you select multiple formats, they will all be available to the user.  If you select none, or the format handler is not found, it will use the default 'Drupal var export'.  This does not affect imports, the required import format will be used automatically."),
     );
   }
   else {
@@ -191,6 +124,18 @@ function node_export_settings($form, &$form_state) {
     '#description' => t('If there are more than this many nodes, the [node_export_filename:nid-list] token for the filename will not be built.  This is to prevent very long filenames.'),
   );
 
+  $form['basic']['node_export_existing'] = array(
+    '#type' => 'radios',
+    '#title' => t('When importing a node that already exists'),
+    '#options' => array(
+      'new' => t('Create a new node'),
+      'revision' => t('Create a new revision of the existing node'),
+      'skip' => t('Skip the node'),
+    ),
+    '#description' => t('UUIDs are used to uniquely identify nodes.'),
+    '#default_value' => variable_get('node_export_existing', 'new'),
+  );
+
   $form['publishing'] = array(
     '#type' => 'fieldset',
     '#title' => t('Reset values on import'),
@@ -204,10 +149,29 @@ function node_export_settings($form, &$form_state) {
       '#collapsible' => TRUE,
       '#collapsed' => TRUE,
     );
-    $form['publishing'][$type]['node_export_reset_' . $type] = array(
+    $form['publishing'][$type]['node_export_reset_status_' . $type] = array(
       '#type' => 'checkbox',
-      '#title' => t('Publishing options (status, moderate, promote, sticky, and revision)'),
-      '#default_value' => variable_get('node_export_reset_' . $type, FALSE),
+      '#title' => t('Published'),
+      '#default_value' => variable_get('node_export_reset_status_' . $type, FALSE),
+      '#description' => t('Set to unpublished'),
+    );
+    $form['publishing'][$type]['node_export_reset_promote_' . $type] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Promoted to front page'),
+      '#default_value' => variable_get('node_export_reset_promote_' . $type, FALSE),
+      '#description' => t('Set to not promoted'),
+    );
+    $form['publishing'][$type]['node_export_reset_sticky_' . $type] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Sticky at top of lists'),
+      '#default_value' => variable_get('node_export_reset_sticky_' . $type, FALSE),
+      '#description' => t('Set to not sticky'),
+    );
+    $form['publishing'][$type]['node_export_reset_author_' . $type] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Author (will set to user performing the import)'),
+      '#default_value' => variable_get('node_export_reset_author_' . $type, TRUE),
+      '#description' => t('Recommended since User IDs could be different on import site and the wrong user may gain permission to edit the node.'),
     );
     $form['publishing'][$type]['node_export_reset_created_' . $type] = array(
       '#type' => 'checkbox',
@@ -218,6 +182,16 @@ function node_export_settings($form, &$form_state) {
       '#type' => 'checkbox',
       '#title' => t('Changed time (<em>Last updated</em> date/time)'),
       '#default_value' => variable_get('node_export_reset_changed_' . $type, TRUE),
+    );
+    $form['publishing'][$type]['node_export_reset_revision_timestamp_'. $type] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Revision changed time'),
+      '#default_value' => variable_get('node_export_reset_revision_timestamp_'. $type, TRUE),
+    );
+    $form['publishing'][$type]['node_export_reset_last_comment_timestamp_'. $type] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Last comment time (date/time the last comment was made)'),
+      '#default_value' => variable_get('node_export_reset_last_comment_timestamp_'. $type, TRUE),
     );
     $form['publishing'][$type]['node_export_reset_menu_' . $type] = array(
       '#type' => 'checkbox',
@@ -233,6 +207,7 @@ function node_export_settings($form, &$form_state) {
       '#type' => 'checkbox',
       '#title' => t('Book menu link'),
       '#default_value' => variable_get('node_export_reset_book_mlid_' . $type, TRUE),
+      '#description' => t('Prevents Book node imports causing errors.'),
     );
   }
 

@@ -41,14 +41,23 @@ function node_export_json_encode_objects($var) {
  * Recursively convert arrays back to objects.
  */
 function node_export_json_decode_objects($array) {
-  foreach ($array as $k => $v) {
-    if (is_array($v)) {
-      $array[$k] = node_export_json_decode_objects($v);
+  if (is_array($array)) {
+    foreach ($array as $k => $v) {
+      if (is_array($v)) {
+        $array[$k] = node_export_json_decode_objects($v);
+      }
     }
+    if (isset($array['#node_export_object'])) {
+      unset($array['#node_export_object']);
+      $array = (object)$array;
+    }
+    return $array;
   }
-  if (isset($array['#node_export_object'])) {
-    unset($array['#node_export_object']);
-    $array = (object)$array;
-  }
-  return $array;
+}
+
+/**
+ * Callback for actions.
+ */
+function node_export_json_action_form($context, &$form_state) {
+  return node_export_action_form($context, $form_state, 'json');
 }

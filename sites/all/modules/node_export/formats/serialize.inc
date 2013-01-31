@@ -23,3 +23,10 @@ function node_export_serialize_import($code_string) {
     return unserialize(htmlspecialchars_decode(str_replace('node_export_serialize::', '', $code_string)));
   }
 }
+
+/**
+ * Callback for actions.
+ */
+function node_export_serialize_action_form($context, &$form_state) {
+  return node_export_action_form($context, $form_state, 'serialize');
+}

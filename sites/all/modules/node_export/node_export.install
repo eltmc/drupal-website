@@ -13,12 +13,17 @@ function node_export_uninstall() {
   variable_del('node_export_code');
   variable_del('node_export_filename');
   variable_del('node_export_file_list');
-  variable_del('node_export_nodes_without_confirm');
+  variable_del('node_export_existing');
   $types = node_type_get_names();
   foreach ($types as $type => $name) {
-    variable_del('node_export_reset_' . $type);
+    variable_del('node_export_reset_status_' . $type);
+    variable_del('node_export_reset_promote_' . $type);
+    variable_del('node_export_reset_sticky_' . $type);
+    variable_del('node_export_reset_author_' . $type);
     variable_del('node_export_reset_created_' . $type);
     variable_del('node_export_reset_menu_' . $type);
+    variable_del('node_export_reset_revision_timestamp_' . $type);
+    variable_del('node_export_reset_last_comment_timestamp_' . $type);
     variable_del('node_export_reset_path_' . $type);
     variable_del('node_export_reset_book_mlid_' . $type);
   }
@@ -32,6 +37,11 @@ function node_export_uninstall() {
   variable_del('node_export_dsv_enclosure');
   variable_del('node_export_dsv_seperator');
   variable_del('node_export_dsv_escape_eol');
+
+  // Old vars.
+  variable_del('node_export_reset_' . $type);
+  variable_del('node_export_nodes_without_confirm');
+
 }
 
 /**

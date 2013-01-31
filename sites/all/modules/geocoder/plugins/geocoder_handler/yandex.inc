@@ -23,8 +23,17 @@ $plugin = array(
  * Process Address
  */
 function geocoder_yandex($address, $options = array()) {
-  $geocoder_settings = variable_get("geocoder_settings",array());
-  $consumer_key = $geocoder_settings["geocoder_apikey_yandex"];
+  global $base_path;
+  $geocoder_settings = variable_get("geocoder_settings", array());
+
+  if (!empty($geocoder_settings["geocoder_apikey_yandex"])) {
+    $consumer_key = $geocoder_settings["geocoder_apikey_yandex"];
+  }
+  else {
+    drupal_set_message("You must set up your Yandex API key. Click <a href='$base_path/admin/config/content/geocoder'>here</a>",'error');
+    return;
+  }
+
   $params = array (
     'format' => 'json',
     'results' => 1,
@@ -33,7 +42,7 @@ function geocoder_yandex($address, $options = array()) {
   );
   $request = drupal_http_request("http://geocode-maps.yandex.ru/1.x/?" . http_build_query($params));
   $data = json_decode($request->data);
-  
+
   return _geocoder_yandex_geometry($data);
 }
 
@@ -56,14 +65,25 @@ function geocoder_yandex_field($field, $field_item) {
 }
 
 function _geocoder_yandex_geometry(&$data) {
-  geophp_load();
-  if (isset($data->error)) {
-    drupal_set_message($data->error->status . ' ' . $data->error->message, 'error');
-  }
-  if($data->response->GeoObjectCollection->metaDataProperty->GeocoderResponseMetaData->found == 0) {
-    return NULL;
-  }
-  $loc = explode(' ', $data->response->GeoObjectCollection->featureMember[0]->GeoObject->Point->pos);
-  return new Point ($loc[0], $loc[1]);
-}
+  try {
+    geophp_load();
 
+    if (isset($data->error)) {
+      $args = array(
+        '@status' => $data->error->status,
+        '@error' => $data->error->message,
+      );
+      $msg = t('Yandex API has reported an error.\nStatus: @status\nError: @error', $args);
+      throw new Exception($msg);
+    }
+
+    if($data->response->GeoObjectCollection->metaDataProperty->GeocoderResponseMetaData->found == 0) {
+      return NULL;
+    }
+
+    $loc = explode(' ', $data->response->GeoObjectCollection->featureMember[0]->GeoObject->Point->pos);
+    return new Point ($loc[0], $loc[1]);
+  } catch (Exception $e) {
+    watchdog_exception('geocoder', $e);
+  }
+}

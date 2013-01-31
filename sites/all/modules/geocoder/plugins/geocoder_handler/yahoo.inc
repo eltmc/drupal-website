@@ -23,8 +23,17 @@ $plugin = array(
  * Process Markup
  */
 function geocoder_yahoo($address, $options = array()) {
+  global $base_path;
   $geocoder_settings = variable_get("geocoder_settings", array());
-  $consumer_key = $geocoder_settings["geocoder_apikey_yahoo"];
+
+  if (!empty($geocoder_settings["geocoder_apikey_yahoo"])) {
+    $consumer_key = $geocoder_settings["geocoder_apikey_yahoo"];
+  }
+  else {
+    drupal_set_message("You must set up your Yahoo API key. Click <a href='$base_path/admin/config/content/geocoder'>here</a>",'error');
+    return;
+  }
+
   $request = drupal_http_request("http://where.yahooapis.com/geocode?location=" . urlencode($address) . "&flags=J&appid={$consumer_key}");
   $data = json_decode($request->data);
 

@@ -336,3 +336,10 @@ function node_export_dsv_dsv_to_array($string, $delimiter, $enclosure, $seperato
   }
   return $lines;
 }
+
+/**
+ * Callback for actions.
+ */
+function node_export_dsv_action_form($context, &$form_state) {
+  return node_export_action_form($context, $form_state, 'dsv');
+}
