@@ -445,6 +445,7 @@ class views_field_view_handler_field_view extends views_handler_field {
               unset($child_view->style_plugin->rendered_fields);
             }
 
+            $child_view->pre_execute();
             $output = $child_view->render();
           }
 
