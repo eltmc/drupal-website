@@ -7,10 +7,13 @@
  * @param $form_state
  *   A keyed array containing the current state of the form.
  */
-function zen_form_system_theme_settings_alter(&$form, $form_state) {
-  /*
-   * Create the form using Forms API
-   */
+function zen_form_system_theme_settings_alter(&$form, $form_state, $form_id = NULL) {
+  // Work-around for a core bug affecting admin themes. See issue #943212.
+  if (isset($form_id)) {
+    return;
+  }
+
+  // Create the form using Forms API
   $form['breadcrumb'] = array(
     '#type'          => 'fieldset',
     '#title'         => t('Breadcrumb settings'),
@@ -55,9 +58,6 @@ function zen_form_system_theme_settings_alter(&$form, $form_state) {
       'disabled' => array(
         ':input[name="zen_breadcrumb_title"]' => array('checked' => TRUE),
       ),
-      'unchecked' => array(
-        ':input[name="zen_breadcrumb_title"]' => array('checked' => TRUE),
-      ),
     ),
   );
   $form['breadcrumb']['breadcrumb_options']['zen_breadcrumb_title'] = array(
@@ -81,17 +81,23 @@ function zen_form_system_theme_settings_alter(&$form, $form_state) {
     '#type'          => 'radios',
     '#title'         => t('Layout method'),
     '#options'       => array(
-                          'zen-columns-liquid' => t('Liquid layout') . ' <small>(layout-liquid.css)</small>',
                           'zen-columns-fixed' => t('Fixed layout') . ' <small>(layout-fixed.css)</small>',
+                          'zen-columns-liquid' => t('Liquid layout') . ' <small>(layout-liquid.css)</small>',
                         ),
     '#default_value' => theme_get_setting('zen_layout'),
   );
   $form['themedev']['zen_jump_link_target'] = array(
     '#type'          => 'textfield',
-    '#title'         => t('Anchor ID for “Jump to Navigation” link'),
+    '#title'         => t('Anchor ID for the “skip link”'),
     '#default_value' => theme_get_setting('zen_jump_link_target'),
     '#field_prefix'  => '#',
-    '#description'   => t('Specify the HTML ID of the main navigation menu; this will be used by the accessible-but-hidden “Jump to Navigation" link at the top of each page.'),
+    '#description'   => t('Specify the HTML ID of the element that the accessible-but-hidden “skip link” should link to. (<a href="!link">Read more about skip links</a>.)', array('!link' => 'http://drupal.org/node/467976')),
+  );
+  $form['themedev']['zen_jump_link_text'] = array(
+    '#type'          => 'textfield',
+    '#title'         => t('Text for the “skip link”'),
+    '#default_value' => theme_get_setting('zen_jump_link_text'),
+    '#description'   => t('For example: <em>Jump to navigation</em>, <em>Skip to content</em>'),
   );
   $form['themedev']['zen_wireframes'] = array(
     '#type'          => 'checkbox',

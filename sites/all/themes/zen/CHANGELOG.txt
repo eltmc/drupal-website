@@ -1,3 +1,25 @@
+Zen 7.x-3.2, 2013-08-19
+-----------------------
+- #1857020: Breadcrumb setting won't stay unchecked
+- #754000: Breadcrumb separator XSS vulnerability
+- #1232840: Redundant label CSS overrides Webform label placement selector
+- #1560212 by AHOY: Opening breadcrumb <div> not printed
+- #1239784: Make zen logo's alpha channel be IE6 compatible
+- #1478244: Weight needed for conditional stylesheets added via drupal_add_css()
+- #469f073: Fix font sizing of monospace fonts
+- #1249842: Deprecate liquid layout CSS
+- #1279838 by JohnAlbin and Bevan: Deleted regions cause PHP notices in maintenance-page.tpl.php
+- #1354356: Fix broken #skip-link styling in stylesheets
+- #1110650: Remove work-around for missing anonymous class on comments (fixed by Drupal 7.9)
+- Work-around for a core bug affecting admin themes. See issue #943212.
+- #1258280 by barraponto: Document $page['navigation'] in page.tpl
+- #1232840 by davidhwang: Redundant label CSS overrides Webform label placement selector
+- #1241090 by KrisBulman: Incorrect calc in html-reset comment
+- #1174290 by naxoc: Fix code error in js/README.txt
+- #1154358 by mverbaar, barraponto and JohnAlbin: Add theme setting for skip link text
+- #1245222: Field styling bleeds into node edit forms
+- #1138744: Port panels layouts to Drupal 7
+
 Zen 7.x-3.1, 2011-04-26
 -----------------------
 - #812480 by Garrett Albright and JohnAlbin: Make "Jump to Nav" link configurable

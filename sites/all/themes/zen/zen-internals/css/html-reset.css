@@ -28,7 +28,7 @@ body {
   font-size: 100%; /* Fixes exaggerated text resizing in IE6 and IE7 */
 }
 
-#skip-to-nav,
+#skip-link,
 #page {
   /*
    * To use a 12px font size on the page, delete the 14px declarations.
@@ -119,7 +119,8 @@ kbd,
 samp,
 tt,
 var {
-  font-family: "Courier New", "DejaVu Sans Mono", monospace;
+  /* See http://meyerweb.com/eric/thoughts/2010/02/12/fixed-monospace-sizing/ */
+  font-family: "Courier New", "DejaVu Sans Mono", monospace, sans-serif;
 }
 
 /*
@@ -146,7 +147,7 @@ h1 {
      margin specified in ems is relative to the element's font-size, not to the
      pages' base font size. So, for example, if we want a 1.5em margin (relative
      to the base font), we have to divide that length by the element's
-     font-size:  1.5em / 2em = 0.5em  */
+     font-size:  1.5em / 2em = 0.75em  */
 }
 
 h2 {
@@ -176,8 +177,6 @@ blockquote {
 }
 
 pre {
-  font-size: 1.1em; /* Monospace fonts can be hard to read */
-  margin: 1.364em 0; /* Equivalent to 1.5em in the page's base font: 1.5 / 1.1 = 1.364 */
 }
 
 hr {

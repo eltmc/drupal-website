@@ -2,6 +2,10 @@
  * @file
  * Layout Styling (DIV Positioning)
  *
+ * DEPRECATED: This layout implements fixed sidebars and a liquid center column.
+ * Flexible grids are a much better solution. This layout will be removed in
+ * future versions of Zen.
+ *
  * Define CSS classes to create a table-free, 3-column, 2-column, or single
  * column layout depending on whether blocks are enabled in the left or right
  * columns.
