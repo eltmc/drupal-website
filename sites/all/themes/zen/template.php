@@ -181,8 +181,8 @@ function zen_preprocess_html(&$variables, $hook) {
     zen_add_conditional_styles();
   }
 
-  $variables['jump_link_target'] = theme_get_setting('zen_jump_link_target');
-  $variables['jump_link_text'] = theme_get_setting('zen_jump_link_text');
+  $variables['jump_link_target'] = check_plain(theme_get_setting('zen_jump_link_target'));
+  $variables['jump_link_text'] = check_plain(theme_get_setting('zen_jump_link_text'));
 
   // Return early, so the maintenance page does not call any of the code below.
   if ($hook != 'html') {
