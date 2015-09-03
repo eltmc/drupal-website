@@ -2,13 +2,9 @@ name = Dropbox Client
 description = Access Dropbox Using App Dropbox Client For Drupal.
 package = Other
 core = 7.x
-configure = admin/config/content/dropbox_client/settings
-files[] = oauth.php
-files[] = dropbox.php
-
-; Information added by drupal.org packaging script on 2013-09-30
-version = "7.x-3.6+0-dev"
+; Information added by Drupal.org packaging script on 2015-07-22
+version = "7.x-3.9"
 core = "7.x"
 project = "dropbox_client"
-datestamp = "1380570300"
+datestamp = "1437569653"
 

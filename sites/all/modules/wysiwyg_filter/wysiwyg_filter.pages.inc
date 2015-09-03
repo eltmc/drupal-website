@@ -450,6 +450,15 @@ function _wysiwyg_filter_xss_attributes($attr, $element = '') {
         }
       }
 
+      // Fix for IE8 broken handling of ` character.
+      if (strpos($attrinfo['value'], '`') !== FALSE) {
+        // IE8 quoting would already be triggered by the presence of any "' <>
+        if (!preg_match('/["\' <>]/', $attrinfo['value'])) {
+          // Trailing space triggers IE8 to correctly quote the value.
+          $attrinfo['value'] .= ' ';
+        }
+      }
+
       // Build parsed attribute value.
       $parsed_attribute .= '=' . $attrinfo['delimiter'] . $attrinfo['value'] . $attrinfo['delimiter'];
     }

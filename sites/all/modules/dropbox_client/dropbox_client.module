@@ -1,7 +1,7 @@
 <?php
 
-define( 'D4D_KEY', 'xux633wkpcmoxl7' );
-define( 'D4D_SECRECT', '37un6ejyba9rdlh' );
+define('D4D_KEY', 'xux633wkpcmoxl7');
+define('D4D_SECRECT', '37un6ejyba9rdlh');    
 
 /**
  * Implements hook_menu().
@@ -10,145 +10,32 @@ function dropbox_client_menu() {
 
   $items[ 'dropbox_client/install' ] = array(
     'title' => 'Install Dropbox for Drupal',
-    'page callback' => 'dropbox_client_connect',
+    'page callback' => 'dropbox_client_install',
     'access callback' => 'user_is_logged_in',
     'type' => MENU_CALLBACK,
-    );
+  );
 
   $items[ 'dropbox_client/access' ] = array(
     'title' => 'Access Dropbox for Drupal',
     'page callback' => 'dropbox_client_access',
     'access callback' => 'user_is_logged_in',
     'type' => MENU_CALLBACK,
-    );
+  );
 
-  $items[ 'dropbox_client/success' ] = array(
+  $items[ 'dropbox_client/sucess' ] = array(
     'title' => 'Dropbox Client for Drupal',
-    'page callback' => 'dropbox_client_success',
+    'page callback' => 'dropbox_client_sucess',
     'access callback' => 'user_is_logged_in',
-    );
+  );
 
-  $items[ 'admin/config/content/dropbox_client/settings' ] = array(
-    'title' => 'DropBox Client Settings',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array( 'dropbox_client_settings' ),
-    'access arguments' => array( 'administer site configuration' ),
-    );
-
-  $items['dropbox/files'] = array(
-    'title' => 'Dropbox Files',
-    'page callback' => 'dropbox_files_list',
-    'access callback' => array('user_is_logged_in'),
-    );
   return $items;
 }
 
-function dropbox_files_list() {
+function dropbox_client_sucess() {
+
   global $user;
-
-  //print_r(variable_get( 'dropbox_client_website_oauth_token', 0 ));
-
-  $content = '';
-
-  $dpath = (isset( $_GET[ 'dpath' ] )) ? $_GET[ 'dpath' ] : '/';
-
-  if ( $user->uid && variable_get( 'dropbox_client_account_type', 0 ) == 2 && (isset( $user->data[ 'dropbox' ][ 'token_secret' ] ) ) ) {
-    $content = dropbox_client_metadata( $dpath ) . l( 'Link Dropbox to Website with another account', 'dropbox_client/install' ) . '</span>';
-  }
-  elseif ( variable_get( 'dropbox_client_account_type', 0 ) == 1 && is_string( variable_get( 'dropbox_client_website_oauth_token', 0 ) ) ) {
-    $content = dropbox_client_metadata( $dpath );
-  }
-  elseif ( variable_get( 'dropbox_client_account_type', 0 ) == 2 ) {
-    $content = l( 'Click here to add drop box folder', 'dropbox_client/install' );
-  } elseif ( variable_get( 'dropbox_client_account_type', 0 ) == 1 ) {
-    $content = l( 'Link Dropbox to Website with another account', 'dropbox_client/install' );
-  }
-
-  return $content;
-}
-
-function dropbox_client_get_client() {
-  global $user;
-
   module_load_include( 'php', 'dropbox_client', 'oauth' );
   module_load_include( 'php', 'dropbox_client', 'dropbox' );
-
-  //Credential for App Dropbox Client For Drupal
-  $params[ 'key' ] = D4D_KEY;
-  $params[ 'secret' ] = D4D_SECRECT;
-
-  if ( variable_get( 'dropbox_client_account_type', 0 ) == 1 ) {
-    $params[ 'access' ] = array( 'oauth_token' => urlencode( variable_get( 'dropbox_client_website_oauth_token', 0 ) ),
-      'oauth_token_secret' => urlencode( variable_get( 'dropbox_client_website_oauth_token_secret', 0 ) ) );
-  }
-  else if ( variable_get( 'dropbox_client_account_type', 0 ) == 2 ) {
-
-    $params[ 'access' ] = array( 'oauth_token' => urlencode( $user->data[ 'dropbox' ][ 'oauth_token' ] ),
-      'oauth_token_secret' => urlencode( $user->data[ 'dropbox' ][ 'oauth_token_secret' ] ) );
-  }
-
-  if ( isset( $params[ 'access' ] ) ) {
-    $dropbox = new dropbox( $params );
-    return $dropbox;
-  }
-  else {
-    return null;
-  }
-}
-
-
-function dropbox_client_uninstall() {
-  variable_del( 'dropbox_client_website_token_secret');
-  variable_del( 'dropbox_client_website_oauth_token');
-  variable_get( 'dropbox_client_website_oauth_token_secret');
-}
-
-function dropbox_client_settings() {
-
-  $form[ 'dropbox_client_account_type' ] = array(
-    '#type' => 'select',
-    '#title' => t( 'Selected' ),
-    '#options' => array(
-      0 => t( 'Select' ),
-      1 => t( 'Widesite Dropbox Account' ),
-      2 => t( 'Dropbox Account per User' ),
-      ),
-    '#default_value' => variable_get( 'dropbox_client_account_type', 0 ),
-    '#description' => t( 'Configure how Dropbox Will be integrated with Drupal. 1) Widesite dropbox account ideal to share files with all users
-    2) Enable each user to use his own Dropbox Account ' ),
-    );
-
-
-  if ( variable_get( 'dropbox_client_account_type', 0 ) === 1 &&
-    (is_string( variable_get( 'dropbox_client_website_token_secret', 0 ) ) &&
-      is_string( variable_get( 'dropbox_client_website_oauth_token', 0 ) ) &&
-      is_string( variable_get( 'dropbox_client_website_oauth_token_secret', 0 ) )
-      )
-    ) {
-
-    $form[ 'dropbox_install_widesite' ] = array(
-      '#type' => 'item',
-      '#markup' => '<span>' . l( 'Link Dropbox to Website', 'dropbox_client/install' ) . '</span>'
-      );
-}
-else if ( variable_get( 'dropbox_client_account_type', 0 ) == 1 ) {
-  $form[ 'dropbox_install_widesite' ] = array(
-    '#type' => 'item',
-    '#markup' => t( 'Dropbox Client for Website was configured successfully' ) . '<span>' . "  " .
-    l( 'Link Dropbox to Website with another account', 'dropbox_client/install' ) . '</span>'
-    );
-}
-
-return system_settings_form( $form );
-}
-
-function dropbox_client_success() {
-
-  global $user;
-
-  module_load_include( 'php', 'dropbox_client', 'oauth' );
-  module_load_include( 'php', 'dropbox_client', 'dropbox' );
-
 
   //Credential for App Dropbox Client For Drupal
   $params[ 'key' ] = D4D_KEY;
@@ -157,41 +44,33 @@ function dropbox_client_success() {
   $params[ 'access' ] = array( 'oauth_token' => urlencode( $_SESSION[ 'oauth_token' ] ),
     'oauth_token_secret' => urlencode( $_SESSION[ 'oauth_token_secret' ] ) );
 
+
   $dropbox = new dropbox( $params );
 
 
   $dbobj = $dropbox->account();
   #$metadata = $dropbox->metadata('/');
 
-  if ( is_object( $dbobj ) and property_exists( $dbobj, 'uid' ) and is_numeric( $dbobj->uid ) ) {
-    $_SESSION[ 'dropbox_client_installed' ] = TRUE;
-    if ( variable_get( 'dropbox_client_account_type', 0 ) == 1 ) {
-      variable_set( 'dropbox_client_website_token_secret', $_SESSION[ 'dropbox_client_token_secret' ] );
-      variable_set( 'dropbox_client_website_oauth_token', $_SESSION[ 'oauth_token' ] );
-      variable_set( 'dropbox_client_website_oauth_token_secret', $_SESSION[ 'oauth_token_secret' ] );
-
-      drupal_goto( 'admin/config/content/dropbox_client/settings' );
+  if(is_object($dbobj) and is_numeric($dbobj->uid)) {
+    $_SESSION['dropbox_client_installed'] = TRUE;
+    $dropbox_client = array('token_secret' => $_SESSION[ 'dropbox_client_token_secret' ],
+                              'oauth_token' => $_SESSION[ 'oauth_token' ],
+                              'oauth_token_secret' => $_SESSION[ 'oauth_token_secret' ]
+                             );
+    if ( is_array( $user->data )) {
+      $user->data = array_merge( $user->data, array( 'dropbox' => $dropbox_client ) );
+      user_save( $user );
     }
-    else if ( variable_get( 'dropbox_client_account_type', 0 ) == 2 ) {
-      $dropbox_client = array( 'token_secret' => $_SESSION[ 'dropbox_client_token_secret' ],
-        'oauth_token' => $_SESSION[ 'oauth_token' ],
-        'oauth_token_secret' => $_SESSION[ 'oauth_token_secret' ]
-        );
-      if ( is_array( $user->data ) ) {
-        $user->data = array_merge( $user->data, array( 'dropbox' => $dropbox_client ) );
-        user_save( $user );
-      }
-      else {
-        $user->data = array( 'dropbox' => $dropbox_client );
-        user_save( $user );
-      }
-
-      return "Dropbox Client For Drupal installed Successfully";
+    else {
+      $user->data =  array( 'dropbox' => $dropbox_client ) ;
+      user_save( $user );
     }
-  }
-  else {
+    
+    return "Dropbox Client For Drupal installed Successfully";
+  } else {
     return "Error: Dropbox Client For Drupal can't be installed";
-  }
+  } 
+  
 }
 
 function dropbox_client_access() {
@@ -208,10 +87,10 @@ function dropbox_client_access() {
 
   $_SESSION[ 'oauth_token' ] = $oauth[ 'oauth_token' ];
   $_SESSION[ 'oauth_token_secret' ] = $oauth[ 'oauth_token_secret' ];
-  drupal_goto( 'dropbox_client/success' );
+  drupal_goto( 'dropbox_client/sucess' );
 }
 
-function dropbox_client_connect() {
+function dropbox_client_install() {
 
   module_load_include( 'php', 'dropbox_client', 'oauth' );
   module_load_include( 'php', 'dropbox_client', 'dropbox' );
@@ -247,28 +126,23 @@ function dropbox_client_block_info() {
   $blocks = array( );
 
 
-  /* $blocks[ 'dropbox_install' ] = array(
+  $blocks[ 'dropbox_install' ] = array(
     'info' => t( 'Install Dropbox Client For Drupal' ),
     'cache' => DRUPAL_NO_CACHE,
-    ); */
-
-$blocks[ 'dropbox_files' ] = array(
-  'info' => t( 'Dropbox Files' ),
-  'cache' => DRUPAL_NO_CACHE,
   );
 
-$blocks[ 'dropbox_upload' ] = array(
-  'info' => t( 'Dropbox Upload' ),
-  'cache' => DRUPAL_NO_CACHE,
+  $blocks[ 'dropbox_files' ] = array(
+    'info' => t( 'Dropbox Files' ),
+    'cache' => DRUPAL_NO_CACHE,
   );
-
-$blocks[ 'dropbox_search' ] = array(
-  'info' => t( 'Dropbox Search' ),
-  'cache' => DRUPAL_NO_CACHE,
+  
+  $blocks[ 'dropbox_upload' ] = array(
+    'info' => t( 'Dropbox Upload' ),
+    'cache' => DRUPAL_NO_CACHE,
   );
+  
 
-
-return $blocks;
+  return $blocks;
 }
 
 /**
@@ -291,204 +165,130 @@ function dropbox_client_block_view( $delta = '' ) {
   $block = '';
 
   switch ( $delta ) {
-
-    case 'dropbox_files':
-    $block[ 'subject' ] = t( '' );
-    $dpath = (isset( $_GET[ 'dpath' ] )) ? $_GET[ 'dpath' ] : '/';
-
-    if ( $user->uid && variable_get( 'dropbox_client_account_type', 0 ) == 2 && (isset( $user->data[ 'dropbox' ][ 'token_secret' ] ) ) ) {
-      $block[ 'content' ] = dropbox_client_metadata( $dpath ) . l( 'Link Dropbox to Website with another account', 'dropbox_client/install' ) . '</span>';
-    }
-    elseif ( variable_get( 'dropbox_client_account_type', 0 ) == 1 && is_string( variable_get( 'dropbox_client_website_oauth_token', 0 ) ) ) {
-      $block[ 'content' ] = dropbox_client_metadata( $dpath );
-    }
-    elseif ( variable_get( 'dropbox_client_account_type', 0 ) == 2 ) {
-      $block[ 'content' ] = l( 'Click here to add drop box folder', 'dropbox_client/install' );
-    } elseif ( variable_get( 'dropbox_client_account_type', 0 ) == 1 ) {
-      $content = l( 'Link Dropbox to Website with another account', 'dropbox_client/install' );
-    }
-    break;
+    case 'dropbox_install':
+      if($user->uid && (!isset($user->data['dropbox']['token_secret']) || !isset($_SESSION['dropbox_client_installed']) || !$_SESSION['dropbox_client_installed']) ) {
+        $block[ 'content' ] = '<span>open folder '.l( 'launch dropbox', 'dropbox_client/install' ).'</span>';
+      }  
+      break;
+    case 'dropbox_files': 
+      $block[ 'subject' ] = t( '' ); 
+      if($user->uid && (isset($user->data['dropbox']['token_secret']) || (isset($_SESSION['dropbox_client_installed']) && $_SESSION['dropbox_client_installed'])) ) {  
+        $dpath = (isset($_GET['dpath']))?$_GET['dpath']:'/';
+        $links = '<div class="documents-controls"><div class="documents-top">top</div><div class="documents-bottom">bottom</div></div>';
+        $block[ 'content' ] = dropbox_client_metadata($dpath).$links;
+       } else {
+         $block[ 'content' ] = l('Click here to add drop box folder','dropbox_client/install');
+       }
+      break; 
     case 'dropbox_upload':
-    $block[ 'subject' ] = t( 'documents' );
-    if ( $user->uid && variable_get( 'dropbox_client_account_type', 0 ) == 2 && (isset( $user->data[ 'dropbox' ][ 'token_secret' ] ) ) ) {
-      $block[ 'content' ] = drupal_get_form( 'dropbox_client_upload_form' );
-    }
-    elseif ( variable_get( 'dropbox_client_account_type', 0 ) == 1 && is_string( variable_get( 'dropbox_client_website_oauth_token', 0 ) ) ) {
-      $block[ 'content' ] = drupal_get_form( 'dropbox_client_upload_form' );
-    }
-    break;
-    case 'dropbox_search':
-    $block[ 'subject' ] = t( 'search' );
-    if ( $user->uid && variable_get( 'dropbox_client_account_type', 0 ) == 2 && (isset( $user->data[ 'dropbox' ][ 'token_secret' ] ) ) ) {
-      if ( isset( $_SESSION[ 'dropbox_client_results' ] ) ) {
-        $block[ 'content' ] = dropbox_client_search_results();
-      }
-      else {
-        $block[ 'content' ] = drupal_get_form( 'dropbox_client_search_form' );
-      }
-    }
-    elseif ( variable_get( 'dropbox_client_account_type', 0 ) == 1 && is_string( variable_get( 'dropbox_client_website_oauth_token', 0 ) ) ) {
-      if ( isset( $_SESSION[ 'dropbox_client_results' ] ) ) {
-        $block[ 'content' ] = dropbox_client_search_results();
-      }
-      else {
-        $block[ 'content' ] = drupal_get_form( 'dropbox_client_search_form' );
-      }
-    }
-    break;
+      if($user->uid && (isset($user->data['dropbox']['token_secret']) || (isset($_SESSION['dropbox_client_installed']) && $_SESSION['dropbox_client_installed'])) ) {
+        $block[ 'subject' ] = t( 'documents' ); 
+        $block[ 'content' ] = drupal_get_form('dropbox_client_upload_form');
+       }
+      break;
   }
 
   return $block;
 }
 
-function dropbox_client_metadata( $path ) {
+function dropbox_client_metadata($path) {
 
-  global $user, $base_path;
+  global $user;
+  
+  module_load_include( 'php', 'dropbox_client', 'oauth' );
+  module_load_include( 'php', 'dropbox_client', 'dropbox' );
 
-  $dropbox = dropbox_client_get_client();
+  //Credential for App Dropbox Client For Drupal
+  $params[ 'key' ] = D4D_KEY;
+  $params[ 'secret' ] = D4D_SECRECT;
+
+  $params[ 'access' ] = array( 'oauth_token' => urlencode( $user->data['dropbox'][ 'oauth_token' ] ),
+    'oauth_token_secret' => urlencode( $user->data['dropbox'][ 'oauth_token_secret' ] ) );
+
+
+  $dropbox = new dropbox( $params );
 
 
   $dbobj = $dropbox->account();
-  $metadata = $dropbox->metadata( $path );
-
-  $files = array( );
-
-  $destination = $_GET[ 'q' ];
-
-  foreach ( $metadata->contents as $content ) {
-    if ( $content->is_dir ) {
-      array_push( $files, array( 'data' => '<a href="' . $base_path . $destination . '?dpath=' . $content->path . '">' . basename( $content->path ) . "</a>", 'class' => array( $content->icon ) )
-        );
-    }
-    else {
-      $media = $dropbox->media( $content->path );
-      $contentclass = isset( $content->icon ) ? array( $content->icon ) : array( "page_white_default" );
-      array_push( $files, array( 'data' => l( basename( $content->path ), $media->url, array( 'attributes' => array('target' => '_blank'))), 'class' => array( $content->icon ) ) );
+  $metadata = $dropbox->metadata($path);
+  $files = array();
+  
+  $destination = $_GET['q'];
+  
+  foreach($metadata->contents as $content) {
+    if($content->is_dir) {
+      array_push($files,
+                        array( 'data' => '<a href="' .  $destination . '?dpath=' . $content->path . '">' . basename($content->path). "</a>", 'class' => array($content->icon) ) 
+                );
+    } else {  
+      $media = $dropbox->media($content->path);
+	  $contentclass = isset( $content->icon ) ? array($content->icon) : array("page_white_default");
+      array_push($files,array( 'data' => l(basename($content->path),$media->url) , 'class' => array($content->icon) ));
     }
   }
 
-  $breadcrumb = explode( "/", $path );
-
-  $incremental_path = '';
-
+  $breadcrumb = explode("/", $path);
+  
+  $incremental_path ='';
+  
   //Delete empty entries except home
-  foreach ( $breadcrumb as $i => $bread ) {
-    if ( $i && empty( $bread ) ) {
-      unset( $breadcrumb[ $i ] );
+  foreach($breadcrumb as $i => $bread) {
+    if($i && empty($bread)){
+      unset($breadcrumb[$i]);
     }
   }
-
-  foreach ( $breadcrumb as $i => $bread ) {
-    if ( !$i ) {
-      if ( count( $breadcrumb ) == 1 ) {
-        $breadcrumb[ $i ] = t('Dropbox Home');
-      }
-      else {
+  
+  foreach($breadcrumb as $i => $bread) {
+    if(!$i) {
+      if(count($breadcrumb) == 1) {
+        $breadcrumb[$i] = 'Dropbox Home';
+      } else {
         $path = '/';
-        $breadcrumb[ $i ] = l(t('Dropbox Home'), $destination, array( 'query' => array( 'dpath' => $path ) ) );
-      }
-    }
-    else if ( count( $breadcrumb ) > ($i + 1) ) {
+        $breadcrumb[$i] = l('Dropbox Home',$destination,array('query'=>array('dpath'=>$path)));
+      }  
+      
+    } else if(count($breadcrumb) > ($i+1) ) {
       $path .= "/" . $bread;
-      $path = preg_replace( "#(^|[^:])//+#", "\\1/", $path );
-      $breadcrumb[ $i ] = l( $bread, $destination, array( 'query' => array( 'dpath' => $path ) ) );
-    }
-    else {
+      $path = preg_replace("#(^|[^:])//+#", "\\1/",$path);
+      $breadcrumb[$i] = l($bread,$destination,array('query'=>array('dpath'=>$path)));
+    } else {
       $path .= "/" . $bread;
-      $path = preg_replace( "#(^|[^:])//+#", "\\1/", $path );
-      $breadcrumb[ $i ] = $bread;
+      $path = preg_replace("#(^|[^:])//+#", "\\1/",$path);
+      $breadcrumb[$i] = $bread;
     }
   }
-
-  $output = theme( 'breadcrumb', array( 'breadcrumb' => $breadcrumb ) );
-
-  return $output . theme( 'dropbox_file_list', array( 'files' => $files ) );
+  
+  $output = theme('breadcrumb',array('breadcrumb'=>$breadcrumb));
+  
+  return $output . theme('dropbox_file_list',array('files' => $files));
 }
 
-function dropbox_client_theme( $existing, $type, $theme, $path ) {
+function dropbox_client_theme($existing, $type, $theme, $path) {
   return array(
     'dropbox_file_list' => array(
-      'variables' => array( 'files' => NULL ),
-      )
-    );
+      'variables' => array('files' => NULL),
+    )
+  );
+    
 }
 
-function theme_dropbox_file_list( $vars ) {
-
-  return theme( 'item_list', array( 'items' => $vars[ 'files' ] ) );
+function theme_dropbox_file_list($vars) {
+        
+  return theme('item_list',array('items' => $vars['files']));
 }
 
-function dropbox_client_search_results() {
-  $files = array( );
-
-  global $user, $base_path;
-
-  foreach ( $_SESSION[ 'dropbox_client_results' ] as $content ) {
-
-    $dropbox = dropbox_client_get_client();
-
-    $destination = $_GET[ 'q' ];
-
-    if ( $content->is_dir ) {
-      array_push( $files, array( 'data' => '<a href="' . $base_path . $destination . '?dpath=' . $content->path . '">' . basename( $content->path ) . "</a>", 'class' => array( $content->icon ) )
-        );
-    }
-    else {
-      $media = $dropbox->media( $content->path );
-      if(property_exists($media,'url')) {
-        $contentclass = isset( $content->icon ) ? array( $content->icon ) : array( "page_white_default" );
-        array_push( $files, array( 'data' => l( basename( $content->path ), $media->url ), 'class' => array( $content->icon ) ) );
-      }
-    }
-  }
-
-  unset( $_SESSION[ 'dropbox_client_results' ] );
-  if(count($files)) {
-    return theme( 'dropbox_file_list', array( 'files' => $files ) );
-  } else {
-    return t('No results');
-  }
-}
-
-function dropbox_client_search_form( $form, &$form_state ) {
-
-  $form[ 'search' ] = array(
-    '#type' => 'textfield',
-    '#title' => t( 'Search' ),
-    '#size' => 20,
-    );
-  $form[ 'submit' ] = array(
-    '#type' => 'submit',
-    '#value' => t( 'Search' ),
-    );
-  return $form;
-}
-
-function dropbox_client_search_form_submit( $form, &$form_state ) {
-
-  global $user;
-
-  $dropbox = dropbox_client_get_client();
-
-  $query = $form_state[ 'values' ][ 'search' ];
-
-  $dpath = (isset( $_GET[ 'dpath' ] )) ? $_GET[ 'dpath' ] : '/';
-  $results = $dropbox->search( $dpath, $query );
-
-  $_SESSION[ 'dropbox_client_results' ] = $results;
-}
 
 function dropbox_client_upload_form( $form, &$form_state ) {
 
   $form[ 'upload' ] = array(
-    '#title' => t('Upload file'),
+    '#title' => 'upload file',
     '#type' => 'file',
-    '#size' => 20,
-    );
+    '#size' => 20,  
+  );
   $form[ 'submit' ] = array(
     '#type' => 'submit',
-    '#value' => t( 'Upload' ),
-    );
+    '#value' => t( 'Save' ),
+  );
   return $form;
 }
 
@@ -496,23 +296,33 @@ function dropbox_client_upload_form_submit( $form, &$form_state ) {
 
   global $user;
 
-  $dropbox = dropbox_client_get_client();
+  module_load_include( 'php', 'dropbox_client', 'oauth' );
+  module_load_include( 'php', 'dropbox_client', 'dropbox' );
 
+  //Credential for App Dropbox Client For Drupal
+  $params[ 'key' ] = D4D_KEY;
+  $params[ 'secret' ] = D4D_SECRECT;
+
+  $params[ 'access' ] = array( 'oauth_token' => urlencode( $user->data['dropbox'][ 'oauth_token' ] ),
+    'oauth_token_secret' => urlencode( $user->data['dropbox'][ 'oauth_token_secret' ] ) );
+
+
+  $dropbox = new dropbox( $params );
+  
   //Process files
-  $uploads_dir = dirname( $_FILES[ 'files' ][ "tmp_name" ][ 'upload' ] );
-
-  $tmp_name = $_FILES[ 'files' ][ "tmp_name" ][ 'upload' ];
-  $name = $_FILES[ 'files' ][ "name" ][ 'upload' ];
+  $uploads_dir =  dirname($_FILES['files']["tmp_name"]['upload']);
+  
+  $tmp_name = $_FILES['files']["tmp_name"]['upload'];
+  $name = $_FILES['files']["name"]['upload'];
   $filename = "$uploads_dir/$name";
-  move_uploaded_file( $tmp_name, $filename );
+  move_uploaded_file($tmp_name, $filename);
 
-  $dpath = (isset( $_GET[ 'dpath' ] )) ? $_GET[ 'dpath' ] : '/';
-  $result = $dropbox->add( $dpath, $filename );
-
-  if ( property_exists( $result, 'error' ) ) {
-    drupal_set_message( $result->error );
-  }
-  else {
-    drupal_goto( $_GET['q'], array( 'query' => array( 'dpath' => $dpath ) ) );
+  $dpath = (isset($_GET['dpath']))?$_GET['dpath']:'/';
+  $result = $dropbox->add($dpath,$filename);
+  
+  if(property_exists($result, 'error')) {
+    drupal_set_message($result->error);
+  } else {
+    drupal_goto('/', array('query'=>array('dpath'=>$dpath)));
   }
 }
