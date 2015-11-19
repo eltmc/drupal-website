@@ -17,7 +17,6 @@ function filefield_paths_filefield_paths_field_settings($field, $instance) {
   return array(
     'file_path' => array(
       'title' => 'File path',
-      'sql'   => 'filepath',
       'form'  => array(
         'value' => array(
           '#type'             => 'textfield',
@@ -31,7 +30,6 @@ function filefield_paths_filefield_paths_field_settings($field, $instance) {
     ),
     'file_name' => array(
       'title' => 'File name',
-      'sql'   => 'filename',
       'form'  => array(
         'value' => array(
           '#type'          => 'textfield',
@@ -62,8 +60,10 @@ function filefield_paths_filefield_paths_process_file($type, $entity, $field, $i
     // Check that the destination is writeable.
     $wrappers = file_get_stream_wrappers(STREAM_WRAPPERS_WRITE);
     foreach ($items as &$file) {
-      $scheme = $field['settings']['uri_scheme'];
-      if (!empty($wrappers[$scheme])) {
+      $source_scheme = file_uri_scheme($file['uri']);
+      $temporary_scheme = file_uri_scheme(variable_get('filefield_paths_temp_location', 'public://filefield_paths'));
+      $destination_scheme = $field['settings']['uri_scheme'];
+      if (in_array($source_scheme, array($temporary_scheme, $destination_scheme)) && !empty($wrappers[$destination_scheme])) {
         // Process file if this is a new entity, 'Active updating' is set or
         // file wasn't previously attached to the entity.
         if (isset($entity->original) && empty($settings['active_updating']) && !empty($entity->original->{$field['field_name']}[$langcode])) {
@@ -89,7 +89,7 @@ function filefield_paths_filefield_paths_process_file($type, $entity, $field, $i
         // Process filepath.
         $settings['file_path']['options']['context'] = 'file_path';
         $path                                        = filefield_paths_process_string($settings['file_path']['value'], $token_data, $settings['file_path']['options']);
-        $file['uri']                                 = file_stream_wrapper_uri_normalize("{$scheme}://{$path}/{$file['filename']}");
+        $file['uri']                                 = file_stream_wrapper_uri_normalize("{$destination_scheme}://{$path}/{$file['filename']}");
 
         // Ensure file uri is no more than 255 characters.
         if (drupal_strlen($file['uri']) > 255) {
@@ -111,15 +111,20 @@ function filefield_paths_filefield_paths_process_file($type, $entity, $field, $i
             }
 
             // Remove any old empty directories.
-            $scheme = file_uri_scheme($old_file['uri']);
-            $paths  = explode('/', str_replace("{$scheme}://", '', drupal_dirname($old_file['uri'])));
+            $paths  = explode('/', str_replace("{$source_scheme}://", '', drupal_dirname($old_file['uri'])));
             while ($paths) {
-              if (@drupal_rmdir("{$scheme}://" . implode('/', $paths)) == TRUE) {
+              if (@drupal_rmdir("{$source_scheme}://" . implode('/', $paths)) == TRUE) {
                 array_pop($paths);
                 continue;
               }
               break;
             }
+          }
+          else {
+            watchdog('filefield_paths', 'The file %old could not be moved to the destination of %new. Ensure your permissions are set correctly.', array(
+              '%old' => $old_file['uri'],
+              '%new' => $file['uri'],
+            ));
           }
         }
       }
