@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 /*
 Copyright (C) 2011 by Jim Saunders
@@ -29,26 +29,26 @@ class dropbox
     const AUTHORIZE_URI = '/oauth/authorize';
     const REQUEST_URI   = '/oauth/request_token';
     const ACCESS_URI    = '/oauth/access_token';
-    
+
     const API_VERSION   = '1';
-    
+
     const HTTP_1        = '1.1';
     const LINE_END      = "\r\n";
-    
+
     const DEBUG = true;
-    
+
     //Array that should contain the consumer secret and
     //key which should be passed into the constructor.
     private $_consumer = false;
     private $_access = false;
-    
+
     private $_header = array(
         'Host'=>self::HOST,
         'Connection'=>'close',
         'User-Agent'=>'Drupal',
         'Accept-encoding'=>'identity'
     );
-    
+
     /**
      * Pass in a parameters array which should look as follows:
      * array('key'=>'example.com', 'secret'=>'mysecret');
@@ -59,14 +59,15 @@ class dropbox
      */
     public function dropbox($params)
     {
-        
+
         if(!array_key_exists('method', $params))$params['method'] = 'GET';
         $params['algorithm'] = OAUTH_ALGORITHMS::HMAC_SHA1; //Only thing available in dropbox
-        
+        //$params['algorithm'] = OAUTH_ALGORITHMS::PLAINTEXT;
+
         $this->_consumer = array_diff_key($params, array('access'=>0));
         if(array_key_exists('access', $params))$this->_access = $params['access'];
     }
-    
+
     /**
      * Sets OAuth access data to authenticate a user with dropbox.
      *
@@ -77,7 +78,7 @@ class dropbox
     {
         $this->_access = $access;
     }
-    
+
     /**
      * This is called to begin the oauth token exchange. This should only
      * need to be called once for a user, provided they allow oauth access.
@@ -105,19 +106,19 @@ class dropbox
         $str = 'Authorization: OAuth '.substr($str, 1);
         //Send it
         $response = $this->_connect($baseurl, $str, $this->_consumer['method']);
-        
+
         //We should get back a request token and secret which
         //we will add to the redirect url.
         parse_str($response, $resarray);
-        
+
         $callback = urlencode($callback);
-        
+
         //Return the full redirect url and let the user decide what to do from there.
         $redirect = self::SCHEME.'://www.dropbox.com/'.self::API_VERSION.self::AUTHORIZE_URI."?oauth_token={$resarray['oauth_token']}&oauth_callback={$callback}";
-        
+
         return array('token_secret'=>$resarray['oauth_token_secret'], 'redirect'=>$redirect);
     }
-    
+
     /**
      * This is called to finish the oauth token exchange. This too should
      * only need to be called once for a user. The token returned should
@@ -144,26 +145,27 @@ class dropbox
             $token = $authfields['oauth_token'];
             $verifier = $authfields['oauth_verifier'];
         }
-        
+
         $tokenddata = array('oauth_token'=>urlencode($token), 'oauth_verifier'=>urlencode($verifier));
         if($secret !== false)$tokenddata['oauth_token_secret'] = urlencode($secret);
-        
+
         $baseurl = self::SCHEME.'://'.self::HOST.'/'.self::API_VERSION.self::ACCESS_URI;
         //Include the token and verifier into the header request.
         $auth = get_auth_header($baseurl, $this->_consumer['key'], $this->_consumer['secret'],
-                                $tokenddata, $this->_consumer['method'], $this->_consumer['algorithm']);
+                                $tokenddata, $this->_consumer['method'], $this->_consumer['algorithm'],
+                                $this->_access['oauth_token'], $this->_access['oauth_token_secret']);
         $response = $this->_connect($baseurl, $auth, $this->_consumer['method']);
         //Parse the response into an array it should contain
         //both the access token and the secret key. (You only
         //need the secret key if you use HMAC-SHA1 signatures.)
         parse_str($response, $oauth);
-        
+
         $this->_access = $oauth;
-        
+
         //Return the token and secret for storage
         return $oauth;
     }
-    
+
     /**
      * Retrieve information about the authenticated users account.
      *
@@ -173,9 +175,9 @@ class dropbox
     {
         return $this->_response_request('/account/info');
     }
-    
+
     /**
-     * Retrieve a file from the currently authenticated user's dropbox 
+     * Retrieve a file from the currently authenticated user's dropbox
      * account. Note: The path should be relative to the root dropbox
      * folder and the destination should be relative to your sites root
      * folder.
@@ -190,7 +192,7 @@ class dropbox
         $path = str_replace(' ', '%20', $path);
         return $this->_content_request("/files/{$root}/{$path}", $destination);
     }
-    
+
     /**
      * Retrieve thumbnail data from image files at specified path.
      *
@@ -205,7 +207,7 @@ class dropbox
         $parstr = http_build_query($params);
         return $this->_content_request("/thumbnails/{$root}/{$path}?{$parstr}", $destination);
     }
-    
+
     /**
      * Adds a local file to the authenticated user's dropbox account using the post method
      *
@@ -224,7 +226,7 @@ class dropbox
         $specialhost = 'api-content.dropbox.com';
         return $this->_post_request($uri, array('file'=>'@'.$filepath), $specialhost);
     }
-    
+
     /**
      * Retrieve metadata information about files or folders in the currently
      * authenticated user's dropbox account. Note: The path should be relative
@@ -241,7 +243,7 @@ class dropbox
         $parstr = empty($params) ? '' : '?'.http_build_query($params);
         return $this->_response_request("/metadata/{$root}/{$path}{$parstr}");
     }
-    
+
     /**
      * Retrieve revision data about files or folders in the currently
      * authenticated user's dropbox account. Note: The path should be relative
@@ -258,7 +260,7 @@ class dropbox
         $parstr = empty($params) ? '' : '?'.http_build_query($params);
         return $this->_response_request("/revisions/{$root}/{$path}{$parstr}");
     }
-    
+
     /**
      * Restore a file or folder to a previous revision.
      *
@@ -272,7 +274,7 @@ class dropbox
         $path = str_replace(' ', '%20', $path);
         return $this->_post_request("/restore/{$root}/{$path}?rev={$revision}");
     }
-    
+
     /**
      * Retrieve metadata for all files and folders that match the search query
      *
@@ -289,7 +291,7 @@ class dropbox
         $parstr = empty($params) ? '' : '&'.http_build_query($params);
         return $this->_response_request("/search/{$root}/{$path}?query={$query}{$parstr}");
     }
-    
+
     /**
      * Retrieve a shareable link to files or folders. The link can be used
      * publicly and directs to a preview page of the file. Also returns the
@@ -304,7 +306,7 @@ class dropbox
         $path = str_replace(' ', '%20', $path);
         return $this->_response_request("/shares/{$root}/{$path}");
     }
-    
+
     /**
      * Retrieve a link directly to a file.
      *
@@ -314,10 +316,10 @@ class dropbox
      **/
     public function media($path, $root='dropbox')
     {
-	$path = implode("/", array_map("rawurlencode", explode("/", $path)));
+        $path = implode("/", array_map("rawurlencode", explode("/", $path)));
         return $this->_response_request("/media/{$root}/{$path}");
     }
-    
+
     /**
      * Copies a file or folder in dropbox to another location within dropbox.
      *
@@ -330,7 +332,7 @@ class dropbox
     {
         return $this->_response_request('/fileops/copy?from_path='.rawurlencode($from).'&to_path='.rawurlencode($to).'&root='.$root);
     }
-    
+
     /**
      * Create a folder relative to the user's Dropbox root or the user's
      * application sandbox folder.
@@ -343,7 +345,7 @@ class dropbox
     {
         return $this->_response_request('/fileops/create_folder?path='.rawurlencode($path).'&root='.$root);
     }
-    
+
     /**
      * Delete a folder or file relative to the user's Dropbox root or
      * the user's application sandbox folder.
@@ -356,7 +358,7 @@ class dropbox
     {
         return $this->_response_request('/fileops/delete?path='.rawurlencode($path).'&root='.$root);
     }
-    
+
     /**
      * Copies a file or folder in dropbox to another location within dropbox.
      *
@@ -369,11 +371,11 @@ class dropbox
     {
         return $this->_response_request('/fileops/move?from_path='.rawurlencode($from).'&to_path='.rawurlencode($to).'&root='.$root);
     }
-    
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Below are the private methods used to create and send the requests to the dropbox api server.
     ////////////////////////////////////////////////////////////////////////////////////////////////
-    
+
     private function _post_request($uri, $data = false, $specialhost = false)
     {
         $request = "POST {$uri} HTTP/".self::HTTP_1.self::LINE_END;
@@ -385,42 +387,42 @@ class dropbox
             $extra['Host'] = $specialhost;
         }
         $url = self::SCHEME."://{$host}/".self::API_VERSION.$uri;
-        
+
         $header = $this->_build_header($url, 'POST', $request, self::LINE_END, $extra);
         if(self::DEBUG)error_log($header);
-        
+
         $response = $this->_connect($url, $header, 'POST', $data);
         return json_decode($response);
     }
-    
+
     private function _content_request($uri, $destination)
     {
         $uri = preg_replace("#(^|[^:])//+#", "\\1/",'/'.self::API_VERSION.$uri);
         $request = "GET {$uri} HTTP/".self::HTTP_1.self::LINE_END;
         $specialhost = 'api-content.dropbox.com';
         $url = self::SCHEME.'://'.$specialhost.$uri;
-        
+
         $header = $this->_build_header($url, 'GET', $request, self::LINE_END, array('Host'=>$specialhost));
         if(self::DEBUG)error_log($header);
-        
+
         $this->_connect($url, $header, 'GET', false, $destination);
     }
-    
-    private function _response_request($uri)
+
+    private function _response_request($uri, $algo = OAUTH_ALGORITHMS::HMAC_SHA1)
     {
         #$uri =  ('/'.self::API_VERSION.$uri);
         $uri = preg_replace("#(^|[^:])//+#", "\\1/",'/'.self::API_VERSION.$uri);
         $request = "GET {$uri} HTTP/".self::HTTP_1.self::LINE_END;
         $url = self::SCHEME.'://'.self::HOST.$uri;
-        
-        $header = $this->_build_header($url, 'GET', $request, self::LINE_END);
+
+        $header = $this->_build_header($url, 'GET', $request, self::LINE_END, array(), $algo);
         if(self::DEBUG)error_log($header);
-        
+
         $response = $this->_connect($url, $header, 'GET');
         return json_decode($response);
     }
-    
-    private function _build_header($url, $method, $prepend, $append, $overwrite = array())
+
+    private function _build_header($url, $method, $prepend, $append, $overwrite = array(), $algo = OAUTH_ALGORITHMS::HMAC_SHA1)
     {
         $str = $prepend === false ? '' : $prepend;
         foreach($this->_header AS $key=>$value)
@@ -428,17 +430,21 @@ class dropbox
             if(array_key_exists($key, $overwrite))$str .= $key.': '.$overwrite[$key].self::LINE_END;
             else $str .= $key.': '.$value.self::LINE_END;
         }
-        if($this->_access !== false && $url !== false)$str .= get_auth_header($url, $this->_consumer['key'], $this->_consumer['secret'], $this->_access, $method, $this->_consumer['algorithm']);
+
+        if($this->_access !== false && $url !== false)
+            $str .= get_auth_header($url, $this->_consumer['key'],
+                                    $this->_consumer['secret'], $this->_access,
+                                    $method, isset($algo)?$algo:$this->_consumer['algorithm'],
+                                    $this->_access['oauth_token'], $this->_access['oauth_token_secret']);
         $str .= $append === false ? '' : $append;
 
         return $str;
     }
-    
+
     private function _connect($url, $header, $request, $postdata = false, $destination = false)
     {
         $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC ) ;
-        curl_setopt($ch, CURLOPT_SSLVERSION,3);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -451,15 +457,15 @@ class dropbox
             curl_setopt($ch, CURLOPT_POST, true);
             curl_setopt($ch, CURLOPT_POSTFIELDS, $postdata);
         }
-        
+
         $response = curl_exec($ch);
-        
+
         if(self::DEBUG)
         {
             error_log(print_r(curl_getinfo($ch), true));
             error_log($response);
         }
-    
+
         //If the specified a destination and the request went OK write the file.
         if($destination !== false && curl_getinfo($ch, CURLINFO_HTTP_CODE) == '200')
         {

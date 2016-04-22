@@ -1,7 +1,10 @@
-<?php 
+<?php
 
 /*
 Copyright (C) 2011 by Jim Saunders
+Update by enzo - enzo@anexusit.com
+- Fixed function get_auth_header to support oAUTH PLAINTEXT 2013-06-08
+  more info https://www.dropbox.com/developers/blog/20
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,13 +26,14 @@ THE SOFTWARE.
 */
 
 /**
- * Defines the different OAuth Signing algorithms. You 
+ * Defines the different OAuth Signing algorithms. You
  * should use this instead of writing them out each time.
  */
 class OAUTH_ALGORITHMS
 {
     const HMAC_SHA1 = 'HMAC-SHA1';
     const RSA_SHA1 = 'RSA-SHA1';
+    const PLAINTEXT = 'PLAINTEXT';
 }
 
 /**
@@ -58,7 +62,7 @@ function sign_hmac_sha1($method, $baseurl, $secret, array $parameters)
     }
     $data .= urlencode(substr($oauth, 1));
     $secret .= '&'.$parameters['oauth_token_secret'];
-    
+
     return base64_encode(hash_hmac('sha1', $data, $secret, true));
 }
 
@@ -124,7 +128,7 @@ function build_auth_string(array $authparams)
  * @param string $algo either HMAC-SHA1 or RSA-SHA1 (NOTE: this affects what you put in for the secret parameter)
  * @return array of all the oauth parameters
  */
-function build_auth_array($baseurl, $key, $secret, $extra = array(), $method = 'GET', $algo = OAUTH_ALGORITHMS::RSA_SHA1)
+function build_auth_array($baseurl, $key, $secret, $extra = array(), $method = 'GET', $algo = OAUTH_ALGORITHMS::RSA_SHA1, $token_key = NULL, $token_secret = NULL)
 {
     $auth['oauth_consumer_key'] = $key;
     $auth['oauth_signature_method'] = $algo;
@@ -133,11 +137,11 @@ function build_auth_array($baseurl, $key, $secret, $extra = array(), $method = '
     $auth['oauth_version'] = '1.0';
 
     $auth = array_merge($auth, $extra);
-    
+
     //We want to remove any query parameters from the base url
     $urlsegs = explode("?", $baseurl);
     $baseurl = $urlsegs[0];
-    
+
     //If there are any query parameters we need to make sure they
     //get signed with the rest of the auth data.
     $signing = $auth;
@@ -146,10 +150,18 @@ function build_auth_array($baseurl, $key, $secret, $extra = array(), $method = '
         preg_match_all("/([\w\-]+)\=([\w\d\-\%\.\$\+\*]+)\&?/", $urlsegs[1], $matches);
         $signing = $signing + array_combine($matches[1], $matches[2]);
     }
-    
+
     if(strtoupper($algo) == OAUTH_ALGORITHMS::HMAC_SHA1)$auth['oauth_signature'] = sign_hmac_sha1($method, $baseurl, $secret, $signing);
     else if(strtoupper($algo) == OAUTH_ALGORITHMS::RSA_SHA1)$auth['oauth_signature'] = sign_rsa_sha1 ($method, $baseurl, $secret, $signing);
-  
+    else if(strtoupper($algo) == OAUTH_ALGORITHMS::PLAINTEXT) {
+
+        $auth['oauth_signature_method'] = OAUTH_ALGORITHMS::PLAINTEXT;
+        $auth['oauth_token'] = $token_key;
+        $auth['oauth_signature'] = rawurlencode($secret ). "&" . rawurlencode($token_secret);
+        unset($auth['oauth_timestamp']);
+        unset($auth['oauth_nonce']);
+    }
+
     $auth['oauth_signature'] = urlencode($auth['oauth_signature']);
     return $auth;
 }
@@ -167,9 +179,9 @@ function build_auth_array($baseurl, $key, $secret, $extra = array(), $method = '
  * @param string $algo either HMAC-SHA1 or RSA-SHA1 (NOTE: this affects what you put in for the secret parameter)
  * @return string the header authorization portion with trailing \r\n
  */
-function get_auth_header($baseurl, $key, $secret, $extra = array(), $method = 'GET', $algo = OAUTH_ALGORITHMS::RSA_SHA1)
+function get_auth_header($baseurl, $key, $secret, $extra = array(), $method = 'GET', $algo = OAUTH_ALGORITHMS::RSA_SHA1,$token_key = NULL, $token_secret)
 {
-    $auth = build_auth_array($baseurl, $key, $secret, $extra, $method, $algo);
+    $auth = build_auth_array($baseurl, $key, $secret, $extra, $method, $algo,$token_key,$token_secret);
     return build_auth_string($auth);
 }
 
